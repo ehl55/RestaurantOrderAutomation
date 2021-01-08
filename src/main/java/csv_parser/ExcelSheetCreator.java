@@ -77,6 +77,10 @@ public class ExcelSheetCreator {
                 
                 for (String category : p.totals.totalsTable.keySet()) {
                     
+                    if (category.equals("Other/Ignore")) continue;
+                    //NOTE: don't have to worry about side category b/c totals.updateOldOrderWithSide() already called in MainWindow, 
+                    //which directly updates the main food (i.e. doesn't update the quantity for the side)
+                    
                     HashMap<String, Integer> foodQuantityMap = p.totals.totalsTable.get(category);
                     
                     //create row for each order

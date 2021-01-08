@@ -14,14 +14,18 @@ import java.util.HashMap;
 /**
  *
  * @author Eug
+ * 
+ * Responsible for reading food categories from "category.csv" and putting into a dictionary 
+ * which can be used to lookup a food's category.
+ * 
  */
-public class Category {
+public class Categorizer {
     HashMap<String, String> catTable; //dictionary to determine food's category
 
-    public Category(String fileName) {
+    public Categorizer() {
         this.catTable = new HashMap<>();
         try {
-            BufferedReader br = new BufferedReader(new FileReader(fileName));
+            BufferedReader br = new BufferedReader(new FileReader("categorizer.csv"));
             String line = br.readLine();
             
             while (line != null) {

@@ -175,7 +175,7 @@ public class MainWindow extends javax.swing.JFrame {
     
     private List<TimeTable> parse (String fileName) {
         
-        Category category = new Category("category.csv");
+        Categorizer category = new Categorizer();
         List<TimeTable> timeTables = new ArrayList<>();
         
         TimeTable currTimeTable = null;
@@ -188,6 +188,7 @@ public class MainWindow extends javax.swing.JFrame {
             String line = br.readLine(); //skip the 0th line (column name)
             
             Set<String> missingCategory = new HashSet<>(); //food names which have no category
+            categorizerJFrame.injectMissingCategory(missingCategory);
             
             //each line is a person
             while (line != null) {
@@ -199,7 +200,7 @@ public class MainWindow extends javax.swing.JFrame {
                 LocalTime t = LocalTime.parse(row[1], formatter);
                 Person p = new Person(row[3] + " " + row[4]); //person's name
                                 
-                parseFood(row[11], p.totals, category, missingCategory); //get orders, update totals at PERSON level
+                parseFood(row[11], p.totals, category, missingCategory, p); //get orders, update totals at PERSON level
                 
                 //create new time block if necessary
                 if(currTimeTable == null) {//hasn't been initialized 
@@ -229,13 +230,11 @@ public class MainWindow extends javax.swing.JFrame {
             //check for any items without categorization, tell user to categorize
             if (missingCategory.size() > 0) {
                 
+                JOptionPane.showMessageDialog(null, "Couldn't complete conversion because of uncategorized items. Please categorize items.", "Error", JOptionPane.INFORMATION_MESSAGE);
+                
                 categorizerJFrame.setVisible(true);
                 
-                String missingString = "";
-                for(String item : missingCategory) missingString += (item + ",\n"); 
-                missingString = missingString.substring(0, missingString.length()-2);
-                
-                categorizerJFrame.setMissingCategoriesTextArea(missingString);
+                categorizerJFrame.updateMissingCategoriesTextArea();
             } else {
                 JOptionPane.showMessageDialog(null, "Sucessful conversion.", "Success", JOptionPane.INFORMATION_MESSAGE);
             }
@@ -251,13 +250,16 @@ public class MainWindow extends javax.swing.JFrame {
     
     //parses a single "Supplements" column, AND updates passed in totals table
     //ex: "1 x Market Pie (26.00),1 x Cheesy Garlic Monkey Bread (Not Pizza) (10.00)"
-    private static void parseFood (String col, Totals totals, Category category, Set<String> missingCategory) {
+    private static void parseFood (String col, Totals totals, Categorizer category, Set<String> missingCategory, Person p) {
         String[] quantityAndFoodArr = col.split(",");
         
         String prevFood = "";
         
         for(String qAndF : quantityAndFoodArr) {
             qAndF = qAndF.trim(); //remove surrounding white spaces
+            
+            if (qAndF.length()==0) continue; //cancelled order
+            
             String[] qAndFSplit = qAndF.split(" x "); //May cause error for weird food name with 'x' in it
             int quantity = Integer.parseInt(qAndFSplit[0]);
             

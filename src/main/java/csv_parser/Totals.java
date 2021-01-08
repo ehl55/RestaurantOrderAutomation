@@ -23,7 +23,7 @@ public class Totals {
     
     //automatically finds proper category and updates food quantity
     //if category for a food doesn't exist, item is added to missing category list (which will be displayed to user)
-    public void order(String foodName, int quantity, Category category, Set<String> missingCategory) {
+    public void order(String foodName, int quantity, Categorizer category, Set<String> missingCategory) {
        HashMap<String, String> catTable = category.catTable;
         if(catTable.containsKey(foodName)) {
             String cat = catTable.get(foodName);
@@ -33,14 +33,14 @@ public class Totals {
             } 
             
             HashMap<String, Integer> foodQuantityMap = totalsTable.get(cat);
-            foodQuantityMap.put(foodName, foodQuantityMap.getOrDefault(foodName, 0) + 1);
+            foodQuantityMap.put(foodName, foodQuantityMap.getOrDefault(foodName, 0) + quantity);
         } else {
             missingCategory.add(foodName);
         }
     }
     
     //add totals1 into calling totals table
-    public void merge (Totals totals1, Category category, Set<String> missingCategory) {
+    public void merge (Totals totals1, Categorizer category, Set<String> missingCategory) {
         
         HashMap<String, String> catTable = category.catTable;
  
@@ -69,9 +69,13 @@ public class Totals {
     }
     
     //"converts" old food into new food
-    public void updateOldOrderWithSide(String prevFood, String prevFoodWithSide, Category category) {
+    public void updateOldOrderWithSide(String prevFood, String prevFoodWithSide, Categorizer category) {
         String cat = category.catTable.get(prevFood);
         HashMap<String, Integer> foodQuantityMap = totalsTable.get(cat);
+        
+        //System.out.println("prev food is: " + prevFood);
+        
+        if (foodQuantityMap == null) return; //User must categorize everything!
         
         //get old food's quantity
         foodQuantityMap.put(prevFoodWithSide, foodQuantityMap.get(prevFood));

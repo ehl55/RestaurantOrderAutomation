@@ -5,8 +5,12 @@
  */
 package csv_parser;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -16,16 +20,62 @@ import javax.swing.JOptionPane;
  * @author Eug
  */
 public class CategorizerJFrame extends javax.swing.JFrame {
+    
+    NewCategoryJFrame newCategoryJFrame;
+    Set<String> missingCategory;
 
     /**
      * Creates new form CategorizerJFrame
      */
     public CategorizerJFrame() {
         initComponents();
+        readCategoriesCsv();
+        
+        newCategoryJFrame = new NewCategoryJFrame(this);
     }
     
-    public void setMissingCategoriesTextArea(String s) {
-        missingCategoriesTextArea.setText(s);
+    public void injectMissingCategory(Set<String> missingCategory) {
+        this.missingCategory = missingCategory;
+    }
+    
+    public void updateMissingCategoriesTextArea() {
+        //reset first
+        missingCategoriesTextArea.setText(null);
+        
+        //not the first LOC b/c could've deleted last missingCategory item
+        //but then if early return, won't delete from missingCategoriesTextArea
+        if (missingCategory.size()==0) return;
+
+        //use missingCategory to update text area
+        String missingString = "";
+        for(String item : missingCategory) missingString += (item + ",\n"); 
+                
+        missingString = missingString.substring(0, missingString.length()-2);
+        missingCategoriesTextArea.setText(missingString);
+    }
+    
+    //read from categories.csv, and update combo box
+    public void readCategoriesCsv() {
+         try {
+            categoryComboBox.removeAllItems();
+            categoryComboBox.addItem("<Select Category>");
+             
+            BufferedReader br = new BufferedReader(new FileReader("categories.csv"));
+            String line = br.readLine(); 
+            while (line != null) {
+                
+                if (line.length() != 0) categoryComboBox.addItem(line); //don't add a blank space category.
+                
+                line = br.readLine();
+            }
+            
+            categoryComboBox.addItem("Other/Ignore");  
+         } catch (FileNotFoundException e) {
+             JOptionPane.showMessageDialog(null, "categories.csv doesn't exist.", "Error", JOptionPane.INFORMATION_MESSAGE);
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }      
     }
 
     /**
@@ -49,18 +99,13 @@ public class CategorizerJFrame extends javax.swing.JFrame {
         jScrollPane3 = new javax.swing.JScrollPane();
         categorizeTextArea = new javax.swing.JTextArea();
         jLabel3 = new javax.swing.JLabel();
+        addCatButton = new javax.swing.JButton();
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
         jScrollPane1.setViewportView(jTextArea1);
 
-        categoryComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "<Select Category>", "Cheesy Bread", "Dog", "Pub", "Salad", "Square", "Side", "Other/Ignore" }));
         categoryComboBox.setToolTipText("");
-        categoryComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                categoryComboBoxActionPerformed(evt);
-            }
-        });
 
         applyButton.setText("Apply");
         applyButton.addActionListener(new java.awt.event.ActionListener() {
@@ -90,16 +135,17 @@ public class CategorizerJFrame extends javax.swing.JFrame {
 
         jLabel3.setText("Category:");
 
+        addCatButton.setText("New Category");
+        addCatButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addCatButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(100, 100, 100)
-                .addComponent(jLabel3)
-                .addGap(18, 18, 18)
-                .addComponent(categoryComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 135, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(100, 100, 100))
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -115,7 +161,14 @@ public class CategorizerJFrame extends javax.swing.JFrame {
                             .addComponent(jScrollPane3)))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(54, 54, 54)
-                        .addComponent(jLabel2)))
+                        .addComponent(jLabel2))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(36, 36, 36)
+                        .addComponent(jLabel3)
+                        .addGap(18, 18, 18)
+                        .addComponent(categoryComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 135, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(addCatButton)))
                 .addGap(20, 20, 20))
         );
         layout.setVerticalGroup(
@@ -127,11 +180,12 @@ public class CategorizerJFrame extends javax.swing.JFrame {
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(20, 20, 20)
                 .addComponent(jLabel2)
-                .addGap(20, 20, 20)
+                .addGap(19, 19, 19)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(categoryComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3))
-                .addGap(20, 20, 20)
+                    .addComponent(jLabel3)
+                    .addComponent(addCatButton))
+                .addGap(18, 18, 18)
                 .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(20, 20, 20)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -155,50 +209,56 @@ public class CategorizerJFrame extends javax.swing.JFrame {
         String[] items = categorizeTextArea.getText().split(",");
         
         try { 
-            FileWriter pw = new FileWriter("category.csv",true);
+            FileWriter pw = new FileWriter("categorizer.csv",true);
             
+            //categorizing each item
             for(String item : items) {
-                item = item.trim();
-                pw.append(item + "," + category + "\n");
                 
-                String missingCat = missingCategoriesTextArea.getText();
-                int startDel = missingCat.indexOf(item);
-                               
-                missingCategoriesTextArea.setText(missingCat.substring(0, startDel) + 
-                        "*CATEGORIZED*" +
-                        missingCat.substring(startDel + item.length()));
+                item = item.trim();
+                
+                System.out.println(item);
+                System.out.println(missingCategory.contains(item));
+                                
+                if(missingCategory.contains(item) && item.length() > 0) {
+                    //add to categorizer.csv
+                    pw.append(item + "," + category + "\n");
+                    
+                    //remove from missingCategory set
+                    missingCategory.remove(item);
+                }
             }
+            
+            //refresh
+            updateMissingCategoriesTextArea();
             
             pw.flush();
             pw.close();
             
-            categorizeTextArea.setText(null);
-            JOptionPane.showMessageDialog(null, "Sucessfully categorized items.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            if (categorizeTextArea.getText().length()==0) {
+                JOptionPane.showMessageDialog(null, "Nothing to categorize, try again.", "Error", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                categorizeTextArea.setText(null);
+                JOptionPane.showMessageDialog(null, "Sucessfully categorized items.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            }
             
         } catch (IOException ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "category.csv doesn't exist.", "Error", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "categorizer.csv doesn't exist.", "Error", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_applyButtonActionPerformed
 
-    private void categoryComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_categoryComboBoxActionPerformed
-        // TODO add your handling code here:
-        categoryComboBox.addItem("Cheesy Bread");
-        categoryComboBox.addItem("Dog");
-        categoryComboBox.addItem("Pub");
-        categoryComboBox.addItem("Salad");
-        categoryComboBox.addItem("Square");
-        categoryComboBox.addItem("Side");
-        categoryComboBox.addItem("Other/Ignore");
-    }//GEN-LAST:event_categoryComboBoxActionPerformed
-
     private void doneButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_doneButtonActionPerformed
         setVisible(false);
-        JOptionPane.showMessageDialog(null, "Sucessful conversion.", "Success", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(null, "Please try conversion again.", "Notification", JOptionPane.INFORMATION_MESSAGE);
     }//GEN-LAST:event_doneButtonActionPerformed
+
+    private void addCatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addCatButtonActionPerformed
+        newCategoryJFrame.setVisible(true);
+    }//GEN-LAST:event_addCatButtonActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton addCatButton;
     private javax.swing.JButton applyButton;
     private javax.swing.JTextArea categorizeTextArea;
     private javax.swing.JComboBox<String> categoryComboBox;
