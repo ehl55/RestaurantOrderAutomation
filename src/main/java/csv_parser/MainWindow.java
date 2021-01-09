@@ -270,7 +270,8 @@ public class MainWindow extends javax.swing.JFrame {
             
             //if it's a side, want to append to previous food item
             //CAREFUL: This can be buggy if a person orders JUST a side, idk if that can happen though.
-            if(catTable.containsKey(foodWithoutPrice) && catTable.get(foodWithoutPrice).equals("Side")) {    
+            //NOTE: "Side" has been changed into "Add on"
+            if(catTable.containsKey(foodWithoutPrice) && catTable.get(foodWithoutPrice).equals("Add on")) {    
                 
                 String side = foodWithoutPrice;
                 String prevFoodWithSide = prevFood + " - " + side; 
