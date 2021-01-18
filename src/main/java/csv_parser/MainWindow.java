@@ -14,9 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -176,13 +178,23 @@ public class MainWindow extends javax.swing.JFrame {
     private List<TimeTable> parse (String fileName) {
         
         Categorizer category = new Categorizer();
-        List<TimeTable> timeTables = new ArrayList<>();
-        
-        TimeTable currTimeTable = null;
         
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
-        LocalTime currTime = null;
-                 
+        
+        //TreeMap so that can retrieve older timeTable if necessary 
+        //ex: person 1 orders pickup at 4PM, person 2 orders delivery at 4PM, then we need access to timetable 330PM (which may or may not exist)
+        TreeMap<String, TimeTable> timeTables = new TreeMap<>(new Comparator<String>()
+        {
+            public int compare(String time1, String time2) {
+                //convert to time object
+                LocalTime t1 = LocalTime.parse(time1, formatter);
+                LocalTime t2 = LocalTime.parse(time2, formatter);
+                
+                //compare
+                return t1.compareTo(t2);
+            }
+        });
+        
         try {
             BufferedReader br = new BufferedReader(new FileReader(fileName));
             String line = br.readLine(); //skip the 0th line (column name)
@@ -195,37 +207,26 @@ public class MainWindow extends javax.swing.JFrame {
                 line = br.readLine();
                 if(line == null) break;
                 
-                String[] row = splitByCommaIgnoreCommaInQuote(line);
-                
-                LocalTime t = LocalTime.parse(row[1], formatter);
+                String[] row = splitByCommaIgnoreCommaInQuote(line);       
                 Person p = new Person(row[3] + " " + row[4]); //person's name
-                                
                 parseFood(row[11], p.totals, category, missingCategory, p); //get orders, update totals at PERSON level
                 
-                //create new time block if necessary
-                if(currTimeTable == null) {//hasn't been initialized 
-                    currTimeTable = new TimeTable(t);
-                    currTime = t;
-                } else if (currTime.compareTo(t) < 0) {// currTime is "smaller" than t
-                    
-                    /* NOTE: chose to ditch the totals at timeblock level.
-                    * Commented out because .merge() will cause food with side orders to be added to missing list, when totals.updateOldOrderWithSide() automatically handles.
-                    *
-                    //before ditching current timeblock, update its totals with all the totals from people
-                    for(Person ppl : currTimeTable.people) {
-                            currTimeTable.totals.merge(ppl.totals, category, missingCategory);
-                    } */
-                    timeTables.add(currTimeTable);
-                    currTimeTable = new TimeTable(t);
-                    currTime = t;
+                LocalTime personTime = LocalTime.parse(row[1], formatter);
+                //new feature 1/17/21: if it's DELIVERY, subtract 30 min
+                //col 9 is "experience" col
+                String experience = row[9];
+                experience = experience.toUpperCase(); //in case it's "Delivery", "delivery", etc.
+                if (experience.contains("DELIVERY")) personTime = personTime.minusMinutes(30);
+                
+                String personTimeString = personTime.format(formatter);
+                //System.out.println(personTimeString);
+                if(!timeTables.containsKey(personTimeString)) {
+                    timeTables.put(personTimeString, new TimeTable(personTime));
                 }
-                   
+                
                 //add person to current timeblock
-                currTimeTable.people.add(p);                
+                timeTables.get(personTimeString).people.add(p);                
             }
-            
-            //one more time for last currentTimeTable
-            timeTables.add(currTimeTable);
             
             //check for any items without categorization, tell user to categorize
             if (missingCategory.size() > 0) {
@@ -245,7 +246,12 @@ public class MainWindow extends javax.swing.JFrame {
             e.printStackTrace();
         }
         
-        return timeTables;
+        List<TimeTable> res = new ArrayList<>();
+        for(TimeTable tt : timeTables.values()) {
+            res.add(tt);
+        }
+        
+        return res;
 }
     
     //parses a single "Supplements" column, AND updates passed in totals table
